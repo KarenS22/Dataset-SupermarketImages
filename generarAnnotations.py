@@ -3,7 +3,7 @@ import pandas as pd
 
 # Ruta al directorio con las imágenes aumentadas
 # train_dir = 'Productos/Train_Aumentado'
-train_dir = 'Productos/Validation'
+train_dir = 'Productos/Validation_Aumentado'
 
 # Obtener todas las clases base (sin combinaciones)
 # Filtramos clases compuestas para obtener solo las clases verdaderas
@@ -33,6 +33,7 @@ for cls_folder in os.listdir(train_dir):
 
 # Crear DataFrame y guardar CSV
 df = pd.DataFrame(annotations)
+# df.to_csv('annotations_multietiqueta.csv', index=False)
 df.to_csv('annotations_val_multietiqueta.csv', index=False)
 
-print("✅ Archivo 'annotations_val_multietiqueta.csv' generado con éxito.")
+print("✅ Archivo 'annotations_multietiqueta.csv' generado con éxito.")
