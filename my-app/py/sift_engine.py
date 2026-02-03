@@ -1,8 +1,5 @@
 import cv2
 import numpy as np
-import joblib
-import os
-from pathlib import Path
 
 class SIFTEngine:
     def __init__(self, storage_path="sift_data.pkl"):
@@ -11,33 +8,17 @@ class SIFTEngine:
         # Storage format: { "product_name": [descriptors_1, descriptors_2, ...] }
         # Or simpler: { "product_name": descriptors } if User implies 1 reference image implies 1 descriptor set
         self.database = {} 
-        self.load_database()
+        # Persistence removed as per request
+        # self.load_database()
 
     def load_database(self):
-        if os.path.exists(self.storage_path):
-            try:
-                self.database = joblib.load(self.storage_path)
-                print(f"Loaded SIFT database with {len(self.database)} products.")
-            except Exception as e:
-                print(f"Failed to load database: {e}")
-                self.database = {}
-        else:
-            self.database = {}
+        # No-op: In-memory only
+        pass
 
     def save_database(self):
-        joblib.dump(self.database, self.storage_path)
-        print("SIFT database saved.")
+        # No-op: In-memory only
+        print("SIFT database updated (in-memory).")
 
-        # MLflow logging
-        try:
-            import mlflow
-            mlflow.set_experiment("SIFT_Product_Registry")
-            with mlflow.start_run():
-                mlflow.log_artifact(self.storage_path)
-                mlflow.log_metric("product_count", len(self.database))
-                print("Logged version to MLflow.")
-        except Exception as e:
-            print(f"MLflow logging failed: {e}")
 
     def register_product(self, name, image_bgr, mask=None, contrast_threshold=0.04, edge_threshold=10):
         """

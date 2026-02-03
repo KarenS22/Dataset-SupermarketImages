@@ -2,8 +2,7 @@ import os
 import cv2
 import numpy as np
 import base64
-import mlflow
-from mlflow.entities import ViewType
+
 from flask import Flask, request, jsonify
 from pathlib import Path
 from flask_cors import CORS
@@ -11,8 +10,7 @@ from flask_cors import CORS
 # este es el motor de reconocimiento de productos
 from sift_engine import get_sift_engine
 
-# aqui se van a guardar las cosas relacionadas al producto, como el nombre, la imagen, etc
-from database import add_image_record, init_db
+
 
 app = Flask(__name__)
 
@@ -21,7 +19,7 @@ CORS(app)
 
 SIFT_STORAGE = "sift_data.pkl"
 
-init_db()
+
 sift_engine = get_sift_engine(str(SIFT_STORAGE))
 
 @app.route('/register', methods=['POST'])
@@ -65,6 +63,7 @@ def register():
     success, msg = sift_engine.register_product(name, image, mask=mask, contrast_threshold=threshold)
     
     if success:
+
         return jsonify({'message': msg}), 200
     else:
         return jsonify({'error': msg}), 500
@@ -145,64 +144,10 @@ def predict():
 
 
 
-@app.route('/mlflow/versions', methods=['GET'])
-def list_versions():
-    """
-    Lista de versiones del modelo entrenado de predicciones.
-    """
 
-    
-    try:
-        experiment = mlflow.get_experiment_by_name("SIFT_Product_Registry")
-        if not experiment:
-            return jsonify([])
-        
-        # ordenados desde el mas reciente
-        runs = mlflow.search_runs(
-            experiment_ids=[experiment.experiment_id],
-            run_view_type=ViewType.ACTIVE_ONLY,
-            order_by=["attribute.start_time DESC"]
-        )
-        
-        versions = []
-        for _, run in runs.iterrows():
-            versions.append({
-                'run_id': run['run_id'],
-                'date': run['start_time'].strftime('%Y-%m-%d %H:%M:%S') if hasattr(run['start_time'], 'strftime') else str(run['start_time']),
-                'product_count': int(run['metrics.product_count']) if 'metrics.product_count' in run and not np.isnan(run['metrics.product_count']) else 0
-            })
-        return jsonify(versions)
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
 
-@app.route('/mlflow/restore', methods=['POST'])
-def restore_version():
 
-    """
-    Lista para restaurar versiones de modelos entrenados.
-    """
 
-    import mlflow
-    import shutil
-    
-    run_id = request.json.get('run_id')
-    if not run_id:
-        return jsonify({'error': 'No run_id provided'}), 400
-    
-    try:
-        # Download (downloads to a temp directory)
-        artifact_uri = f"runs:/{run_id}/sift_data.pkl"
-        downloaded_path = mlflow.artifacts.download_artifacts(artifact_uri=artifact_uri)
-        
-        # Overwrite current database
-        shutil.copy(downloaded_path, SIFT_STORAGE)
-        
-        # Reload memory
-        sift_engine.load_database()
-        
-        return jsonify({'message': f'Restored version {run_id}', 'count': len(sift_engine.database)})
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
 
 
         
